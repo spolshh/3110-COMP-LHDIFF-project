@@ -37,3 +37,21 @@ def evaluate_directory(path):
         if not os.path.exists(xml_file_path):
             print(f"Skipping {base_name}: XML Ground Truth not found.")
             continue
+
+        # 2. Parse XML to find out which versions we need to test
+        # returns { 1: {...}, 2: {...}, 3: {...} }
+        truth_versions = parse_all_versions(xml_file_path)
+        
+        if not truth_versions:
+            print(f"Skipping {base_name}: XML contained no valid version data.")
+            continue
+
+        print(f"Processing Group: {base_name}...")
+        
+        # Read Base Content (Version 1)
+        try:
+            with open(base_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content_base = f.read()
+        except Exception as e:
+            print(f"  Error reading base file: {e}")
+            continue

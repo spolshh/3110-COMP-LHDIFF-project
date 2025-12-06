@@ -55,3 +55,25 @@ def evaluate_directory(path):
         except Exception as e:
             print(f"  Error reading base file: {e}")
             continue
+
+        # 3. Iterate through all versions found in the XML
+        for ver_num, truth_mapping in sorted(truth_versions.items()):
+            # Version 1 is usually identity (comparing file to itself), we can skip or check it.
+            # Usually we care about changes, so let's check if the file for this version exists.
+            
+            # Construct target filename: "BaseTypes_3.java"
+            target_filename = f"{base_name}_{ver_num}{ext}"
+            target_path = os.path.join(dirname, target_filename)
+            
+            if not os.path.exists(target_path):
+                # If XML has Version 5 but file isn't there, skip
+                continue
+            
+            print(f"  -> Comparing v1 vs v{ver_num} ({target_filename})...")
+            
+            try:
+                with open(target_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content_target = f.read()
+            except:
+                print(f"     [Error reading {target_filename}]")
+                continue

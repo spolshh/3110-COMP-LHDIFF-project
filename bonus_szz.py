@@ -45,3 +45,40 @@ class BugIdentifier:
 
         print(f"    Buggy lines in previous version: {buggy_indices_prev}")
         self._blame(fix_commit['parent_id'], buggy_indices_prev)
+
+    def _blame(self, start_commit_id, target_indices):
+        """
+        Walks history backwards to find who introduced the lines.
+        """
+        start_idx = next((i for i, c in enumerate(self.commits) if c['id'] == start_commit_id), -1)
+        if start_idx == -1: return
+
+        current_indices = set(target_indices)
+        
+        # Walk backwards
+        for i in range(start_idx, -1, -1):
+            commit = self.commits[i]
+            
+            # Map Current -> Previous to see if line existed before
+            tracker = LHDiff(commit['file_prev'], commit['file_curr'])
+            mapping = tracker.run()
+            
+            # Reverse map: New Index -> Old Index
+            rev_map = {}
+            for old, new_list in mapping.items():
+                for n in new_list:
+                    rev_map[n] = old
+            
+            next_indices = set()
+            for lines_idx in list(current_indices):
+                if lines_idx in rev_map:
+                    # Line existed before, keep tracing back
+                    next_indices.add(rev_map[lines_idx])
+                else:
+                    # Line does not map to previous file -> Introduced here!
+                    print(f"    !!! BUG ORIGIN FOUND: Commit {commit['id']} introduced buggy line {lines_idx}")
+                    self.bug_inducing_commits.add(commit['id'])
+                    current_indices.remove(lines_idx)
+            
+            if not current_indices: break
+            current_indices = next_indices

@@ -1,0 +1,20 @@
+Dogs
+Cats
+Frog
+Horse
+Bird
+Fish
+Pig
+Rabbit
+Hamster
+Guinea pig
+Ferret
+Turtle
+Lizard
+Snake
+Goat
+Shepherd
+Cow
+Donkey
+Chicken
+Duck season

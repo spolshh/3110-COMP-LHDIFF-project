@@ -1,0 +1,20 @@
+Car
+Taxi
+Truck
+Buses
+Motorcycle
+Bicycle
+Scooter
+Tractor trailer
+Van
+Ambulance
+Firetruck
+Airplane
+Police car
+Train
+Subway
+Tram Ham
+ship
+Ferry boat
+Boat
+Helicopter

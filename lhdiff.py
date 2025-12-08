@@ -84,3 +84,54 @@ class LHDiff:
             if old_idx not in self.mapping and new_idx not in self.mapped_new_indices:
                 self.mapping[old_idx] = [new_idx]
                 self.mapped_new_indices.add(new_idx)
+
+    def _generate_simhash_candidates(self):
+        k = 15 
+        candidates = {}
+        
+        # Precompute hashes for unmapped new lines
+        new_hashes = []
+        for i, l in enumerate(self.norm_new):
+            if i not in self.mapped_new_indices:
+                new_hashes.append((i, utils.simple_simhash(l)))
+
+        for i, old_line in enumerate(self.norm_old):
+            if i in self.mapping: continue
+            
+            h_old = utils.simple_simhash(old_line)
+            
+            # Rank all available new lines by Hamming distance
+            dists = []
+            for new_idx, h_new in new_hashes:
+                d = utils.hamming_distance(h_old, h_new)
+                dists.append((d, new_idx))
+            
+            dists.sort(key=lambda x: x[0])
+            candidates[i] = [x[1] for x in dists[:k]]
+            
+        return candidates
+
+    def _get_context(self, lines, idx, window=4):
+        start = max(0, idx - window)
+        end = min(len(lines), idx + window + 1)
+        return " ".join(lines[start:end])
+
+    def _step5_detect_splits(self):
+        """
+        Checks if a mapped line should actually map to multiple lines (split).
+        """
+        for old_idx, new_indices in list(self.mapping.items()):
+            current_new = new_indices[0]
+            next_new = current_new + 1
+            
+            if next_new < len(self.norm_new) and next_new not in self.mapped_new_indices:
+                current_match_str = self.norm_new[current_new]
+                combined_match_str = self.norm_new[current_new] + self.norm_new[next_new]
+                target_str = self.norm_old[old_idx]
+
+                dist_current = utils.levenshtein_distance(target_str, current_match_str)
+                dist_combined = utils.levenshtein_distance(target_str, combined_match_str)
+
+                if dist_combined < dist_current:
+                    self.mapping[old_idx].append(next_new)
+                    self.mapped_new_indices.add(next_new)

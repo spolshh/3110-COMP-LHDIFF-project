@@ -38,3 +38,49 @@ class LHDiff:
                     new_idx = j1 + k
                     self.mapping[old_idx] = [new_idx]
                     self.mapped_new_indices.add(new_idx)
+                    
+    def _step3_candidate_generation(self):
+        """
+        Generates candidates using SimHash and scores them using hybrid similarity.
+        """
+        # 1. Generate Candidates via SimHash
+        candidates = self._generate_simhash_candidates()
+        
+        matches = []
+        
+        # 2. Score Candidates
+        for old_idx, candidate_list in candidates.items():
+            if old_idx in self.mapping: continue 
+
+            best_score = -1
+            best_new_idx = -1
+
+            for new_idx in candidate_list:
+                if new_idx in self.mapped_new_indices: continue
+
+                # Content Similarity (Levenshtein)
+                content_sim = utils.normalized_levenshtein(self.norm_old[old_idx], self.norm_new[new_idx])
+                
+                # Context Similarity (Cosine on Window)
+                old_ctx = self._get_context(self.old_lines, old_idx)
+                new_ctx = self._get_context(self.new_lines, new_idx)
+                context_sim = utils.cosine_similarity(old_ctx, new_ctx)
+
+                # Combined Score Formula
+                combined = (0.6 * content_sim) + (0.4 * context_sim)
+                
+                if combined > best_score:
+                    best_score = combined
+                    best_new_idx = new_idx
+
+            # Threshold
+            if best_score > 0.4: 
+                matches.append((best_score, old_idx, best_new_idx))
+
+        # 3. Resolve Conflicts (Greedy sort)
+        matches.sort(key=lambda x: x[0], reverse=True)
+        
+        for score, old_idx, new_idx in matches:
+            if old_idx not in self.mapping and new_idx not in self.mapped_new_indices:
+                self.mapping[old_idx] = [new_idx]
+                self.mapped_new_indices.add(new_idx)

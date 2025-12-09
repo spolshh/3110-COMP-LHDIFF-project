@@ -6,7 +6,7 @@ def parse_all_versions(xml_path):
     Returns:
         dict: { version_number (int): { old_line_idx: new_line_idx } }
     """
-      try:
+    try:
         tree = ET.parse(xml_path)
         root = tree.getroot()
         

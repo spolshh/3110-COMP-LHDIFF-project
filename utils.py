@@ -43,4 +43,45 @@ def normalized_levenshtein(s1, s2):
     dist = levenshtein_distance(s1, s2)
     return 1.0 - (dist / max_len)
 
+def cosine_similarity(text1, text2):
+    """
+    Calculates Cosine Similarity for Context.
+    """
+    vec1 = Counter(text1.split())
+    vec2 = Counter(text2.split())
+    
+    intersection = set(vec1.keys()) & set(vec2.keys())
+    numerator = sum([vec1[x] * vec2[x] for x in intersection])
+    
+    sum1 = sum([vec1[x]**2 for x in vec1.keys()])
+    sum2 = sum([vec2[x]**2 for x in vec2.keys()])
+    denominator = math.sqrt(sum1) * math.sqrt(sum2)
+    
+    if not denominator:
+        return 0.0
+    return numerator / denominator
 
+def simple_simhash(text):
+    """
+    Generates a 32-bit integer fingerprint for a string using a simple SimHash approach.
+    """
+    features = text.split()
+    v = [0] * 32
+    for feature in features:
+        h = hash(feature)
+        for i in range(32):
+            bit = (h >> i) & 1
+            if bit: v[i] += 1
+            else:   v[i] -= 1
+    fingerprint = 0
+    for i in range(32):
+        if v[i] > 0:
+            fingerprint |= (1 << i)
+    return fingerprint
+
+def hamming_distance(h1, h2):
+    """
+    Calculates hamming distance between two 32-bit integers.
+    """
+    x = h1 ^ h2
+    return bin(x).count('1')

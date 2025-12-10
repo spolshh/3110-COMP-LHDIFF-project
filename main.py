@@ -3,6 +3,12 @@ import glob
 from lhdiff import LHDiff
 from xml_parser import parse_all_versions
 
+# ==========================================
+# CONFIGURATION
+# ==========================================
+# Change this path to the folder containing your file sets
+DATASET_PATH = "./tests"
+
 def evaluate_directory(path):
     """
     Scans directory for files matching *_1.* (the base versions).
@@ -77,3 +83,54 @@ def evaluate_directory(path):
             except:
                 print(f"     [Error reading {target_filename}]")
                 continue
+
+             # 4. Run LHDiff (Base vs Target)
+            tool = LHDiff(content_base, content_target)
+            computed_mapping = tool.run()
+            
+            # 5. Evaluate
+            file_correct = 0
+            file_total_lines = 0
+            
+            for old_idx, true_new_idx in truth_mapping.items():
+                file_total_lines += 1
+                
+                # Get prediction
+                predicted_indices = computed_mapping.get(old_idx, [])
+                predicted_first = predicted_indices[0] if predicted_indices else None
+                
+                # Check correctness
+                if true_new_idx is None:
+                    if not predicted_indices: file_correct += 1
+                else:
+                    if predicted_first == true_new_idx:
+                        file_correct += 1
+            
+            acc = (file_correct / file_total_lines * 100) if file_total_lines else 0
+            print(f"     Accuracy: {acc:.2f}% ({file_correct}/{file_total_lines})")
+            
+            total_correct_mappings += file_correct
+            total_lines_checked += file_total_lines
+            total_files_checked += 1
+
+    if total_lines_checked > 0:
+        print("\n" + "="*40)
+        print(f"OVERALL AVERAGE ACCURACY: {(total_correct_mappings/total_lines_checked)*100:.2f}%")
+        print(f"Files Checked: {total_files_checked}")
+        print("="*40)
+
+def run_bonus_demo():
+    from bonus_szz import BugIdentifier
+    print("\n" + "="*40)
+    print("RUNNING BONUS SZZ DEMO")
+    print("="*40)
+    # Demo data remains same...
+    c1 = {'id': 'C1', 'msg': 'Init', 'file_prev': '', 'file_curr': 'lineA\nlineB', 'parent_id': None}
+    c2 = {'id': 'C2', 'msg': 'Add bug', 'file_prev': 'lineA\nlineB', 'file_curr': 'lineA\nlineB\nif(bug)', 'parent_id': 'C1'}
+    c3 = {'id': 'C3', 'msg': 'Fix bug #101', 'file_prev': 'lineA\nlineB\nif(bug)', 'file_curr': 'lineA\nlineB', 'parent_id': 'C2'}
+    szz = BugIdentifier([c1, c2, c3])
+    szz.identify_fixes()
+
+if __name__ == "__main__":
+    evaluate_directory(DATASET_PATH)
+    run_bonus_demo()

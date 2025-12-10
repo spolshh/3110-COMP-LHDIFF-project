@@ -7,7 +7,7 @@ from xml_parser import parse_all_versions
 # CONFIGURATION
 # ==========================================
 # Change this path to the folder containing your file sets
-DATASET_PATH = "./tests"
+DATASET_PATH = "./DATASET_PATH"
 
 def evaluate_directory(path):
     """
